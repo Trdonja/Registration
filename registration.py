@@ -1,9 +1,5 @@
 import subprocess
 from os import environ
-from medpy.io.header import get_pixel_spacing
-from medpy.io import load
-from medpy.metric import dc, hd
-import numpy as np
 
 
 def add_elastix_to_path():
@@ -31,7 +27,7 @@ def elastix(fixed_image, moving_image, output_dir, parameters=('rigid', 'spline'
     subprocess.run(['elastix -f ' + fixed_image + ' -m ' + moving_image +
                     ' -out ' + output_dir +
                     ' -p ' + parameters_rigid + ' -p ' + parameters_spline
-                    ], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    ], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
 
 
 def transformix_masks(mask_image, output_dir):
@@ -93,7 +89,7 @@ def ants(fixed_image, moving_image, output_dir, parameters='default'):
         cmd = parameter_list['default']
     else:
         cmd = parameter_list[parameters]
-    subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
 
 
 def ants_bulat(fixed_image, moving_image, output_dir):
@@ -108,18 +104,23 @@ def ants_bulat(fixed_image, moving_image, output_dir):
            '-m MI[' + fixed_image + ', ' + moving_image + ', 1, 32, regular, 0.25] ' +
            '-o [' + output_dir + ', ' + output_dir + 'image.nii.gz]'
            ]
-    subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
     # print(p.stdout)
 
 
-def ants_transform_mask(fixed_image, mask_image, output_dir):
+def ants_transform_mask(fixed_image, mask_image, output_dir, use_inverse=False):
+    if use_inverse:
+        warp = '1InverseWarp.nii.gz'
+    else:
+        warp = '1Warp.nii.gz'
     subprocess.run(['/home/domen/Registracija/ANTs/antsApplyTransforms -d 3' +
                     ' -i ' + mask_image + ' -r ' + fixed_image + ' -o ' + output_dir + 'mask.nii.gz'
-                    ' -t ' + output_dir + '1Warp.nii.gz -t ' + output_dir + '0GenericAffine.mat' +
-                    ' -n NearestNeighbor -v 10'
-                    ], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    ' -t ' + output_dir + warp + ' -t ' + output_dir + '0GenericAffine.mat' +
+                    ' -n NearestNeighbor -v 98'
+                    ], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
     subprocess.run(['/home/domen/Registracija/CastImageFilter/bin/CastImageFilter',
-                    output_dir + 'mask.nii.gz', 'char', output_dir + 'mask.nii.gz'])
+                    output_dir + 'mask.nii.gz', 'char', output_dir + 'mask.nii.gz'
+                    ], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
 
 
 def niftyreg(fixed_image, moving_image, output_dir):
@@ -129,7 +130,7 @@ def niftyreg(fixed_image, moving_image, output_dir):
                     ' -flo ' + moving_image +
                     ' -aff ' + output_dir + 'affine.txt' +
                     ' -rigOnly'  # odstrani -rigOnly, če želiš imeti polno afino preslikavo in ne zgolj togo
-                    ], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    ], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
     subprocess.run(['/home/domen/Registracija/NiftyReg/install/bin/reg_f3d' +
                     ' -ref ' + fixed_image +
                     ' -flo ' + moving_image +
@@ -137,7 +138,7 @@ def niftyreg(fixed_image, moving_image, output_dir):
                     ' -cpp ' + output_dir + 'deformable.nii.gz' +
                     ' -res ' + output_dir + 'image.nii.gz' +
                     ' -sx 40 -sy 40 -sz 40 -be 0 -gpu -pad -1'
-                    ], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    ], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
 
 
 def niftyreg_transform_mask(fixed_image, mask_image, output_dir):
@@ -147,23 +148,4 @@ def niftyreg_transform_mask(fixed_image, mask_image, output_dir):
                     ' -trans ' + output_dir + 'deformable.nii.gz' +
                     ' -res ' + output_dir + 'mask.nii.gz' +
                     ' -inter 0 -pad 10'
-                    ], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-
-def metrics_deprecated(mask_image1, mask_image2, list_of_mask):
-    """METRICS similarity between two image masks
-
-    The result is a numpy array with size 2xN, where N is the length of list of mask.
-    First row contains DICE coefficients, second row contains Hausdorff distances.
-    """
-    m = max(list_of_mask)
-    array1, header1 = load(mask_image1)
-    array2, header2 = load(mask_image2)
-    spacing = list(get_pixel_spacing(header1))
-    array1[np.where(array2 < 0)] = 0
-    array1[np.where(array2 > m)] = 0
-    result = np.zeros((2, len(list_of_mask)))
-    for i, masknum in enumerate(list_of_mask):
-        result[0, i] = dc(array1 == masknum, array2 == masknum)
-        result[1, i] = hd(array1 == masknum, array2 == masknum, voxelspacing=spacing)
-    return result
+                    ], shell=True, stdout=subprocess.PIPE, universal_newlines=True)

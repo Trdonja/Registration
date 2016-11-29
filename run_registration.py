@@ -12,12 +12,12 @@ b_ants_t2 = False
 b_niftyreg_t1 = False
 b_niftyreg_t2 = False
 
-f_elastix = 'elastix_Leibfarth'
+f_elastix = 'elastixtp'
 f_ants = 'ants_bulat'
 f_niftyreg = 'niftyreg'
-f_results = 'rezultatiLeibfarth'
+f_results = 'rezultatiTP'
 
-p_elastix = ('rigidLeibfarth', 'splineLeibfarth')
+p_elastix = ('rigid', 'spline')
 p_ants = 'bulat'
 
 # =======================================================================================
