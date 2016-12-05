@@ -110,16 +110,19 @@ def ants_bulat(fixed_image, moving_image, output_dir):
 
 def ants_transform_mask(fixed_image, mask_image, output_dir, use_inverse=False):
     if use_inverse:
-        warp = '1InverseWarp.nii.gz'
+        subprocess.run(['/home/domen/Registracija/ANTs/antsApplyTransforms -d 3' +
+                        ' -i ' + mask_image + ' -r ' + fixed_image + ' -o ' + output_dir + 'mask.nii.gz' +
+                        ' -t [' + output_dir + '0GenericAffine.mat, 1] -t ' + output_dir + '1InverseWarp.nii.gz' +
+                        ' -n NearestNeighbor -v 98'
+                        ], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
     else:
-        warp = '1Warp.nii.gz'
-    subprocess.run(['/home/domen/Registracija/ANTs/antsApplyTransforms -d 3' +
-                    ' -i ' + mask_image + ' -r ' + fixed_image + ' -o ' + output_dir + 'mask.nii.gz'
-                    ' -t ' + output_dir + warp + ' -t ' + output_dir + '0GenericAffine.mat' +
-                    ' -n NearestNeighbor -v 98'
-                    ], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
-    subprocess.run(['/home/domen/Registracija/CastImageFilter/bin/CastImageFilter',
-                    output_dir + 'mask.nii.gz', 'char', output_dir + 'mask.nii.gz'
+        subprocess.run(['/home/domen/Registracija/ANTs/antsApplyTransforms -d 3' +
+                        ' -i ' + mask_image + ' -r ' + fixed_image + ' -o ' + output_dir + 'mask.nii.gz' +
+                        ' -t ' + output_dir + '1Warp.nii.gz -t ' + output_dir + '0GenericAffine.mat' +
+                        ' -n NearestNeighbor -v 98'
+                        ], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
+    subprocess.run(['/home/domen/Registracija/CastImageFilter/bin/CastImageFilter ' +
+                    output_dir + 'mask.nii.gz char ' + output_dir + 'mask.nii.gz'
                     ], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
 
 
